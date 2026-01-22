@@ -9,31 +9,35 @@
 [build.environment]
   NODE_VERSION = "18"
 
-# Redirect all routes to index.html for SPA
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-
-# API routes - proxy to Netlify Functions
+# API routes - proxy to Netlify Functions (MUST come before catch-all)
 [[redirects]]
   from = "/api/upload"
   to = "/.netlify/functions/upload"
   status = 200
+  force = true
 
 [[redirects]]
   from = "/api/geotag"
   to = "/.netlify/functions/geotag"
   status = 200
+  force = true
 
 [[redirects]]
   from = "/api/download/*"
   to = "/.netlify/functions/download"
   status = 200
+  force = true
 
 [[redirects]]
   from = "/api/cleanup/*"
   to = "/.netlify/functions/cleanup"
+  status = 200
+  force = true
+
+# Redirect all other routes to index.html for SPA (must be last)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
   status = 200
 
 # Headers for CORS
