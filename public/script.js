@@ -3,6 +3,7 @@ let map;
 let marker;
 let currentFilename = null;
 let uploadedImageData = null;
+let currentImageData = null; // Store base64 image data for Netlify Functions
 
 // Initialize map
 function initMap() {
@@ -247,6 +248,8 @@ async function handleFile(file) {
         if (data.success) {
             currentFilename = data.filename;
             uploadedImageData = data;
+            // Store image data for Netlify Functions (base64)
+            currentImageData = data.imageData || null;
             
             // Show tool section
             const toolSection = document.getElementById('toolSection');
@@ -331,23 +334,37 @@ async function handleWriteExif() {
 
     try {
         showStatus('Writing EXIF tags...', 'warning');
+        
+        // For Netlify Functions, we need to send the image data
+        const requestBody = {
+            filename: currentFilename,
+            lat: lat,
+            lon: lon,
+            description: description,
+            keywords: keywords
+        };
+        
+        // Include image data if available (for Netlify Functions)
+        if (currentImageData) {
+            requestBody.imageData = currentImageData;
+        }
+        
         const response = await fetch('/api/geotag', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                filename: currentFilename,
-                lat: lat,
-                lon: lon,
-                description: description,
-                keywords: keywords
-            })
+            body: JSON.stringify(requestBody)
         });
 
         const data = await response.json();
 
         if (data.success) {
+            // Store the processed image data for download
+            if (data.imageData) {
+                currentImageData = data.imageData;
+            }
+            
             showStatus('EXIF tags written successfully! You can now download the image.', 'success');
             document.getElementById('downloadBtn').disabled = false;
             if (data.warning) {
@@ -364,27 +381,50 @@ async function handleWriteExif() {
 
 // Download geotagged image
 async function handleDownload() {
-    if (!currentFilename) {
+    if (!currentFilename && !currentImageData) {
         showStatus('No image to download', 'error');
         return;
     }
 
     try {
-        const response = await fetch(`/api/download/geotagged_${currentFilename}`);
-        
-        if (response.ok) {
-            const blob = await response.blob();
+        // For Netlify Functions, we have the image data directly
+        if (currentImageData) {
+            // Convert base64 to blob
+            const byteCharacters = atob(currentImageData);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: 'image/jpeg' });
+            
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `geotagged_${uploadedImageData.originalName || 'image.jpg'}`;
+            a.download = `geotagged_${uploadedImageData?.originalName || currentFilename || 'image.jpg'}`;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
             showStatus('Download started!', 'success');
         } else {
-            showStatus('Download failed. Please write EXIF tags first.', 'error');
+            // Fallback to server download (for non-Netlify deployments)
+            const response = await fetch(`/api/download/geotagged_${currentFilename}`);
+            
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `geotagged_${uploadedImageData?.originalName || 'image.jpg'}`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                showStatus('Download started!', 'success');
+            } else {
+                showStatus('Download failed. Please write EXIF tags first.', 'error');
+            }
         }
     } catch (error) {
         console.error('Download error:', error);
@@ -450,6 +490,7 @@ function handleClear() {
         const oldFilename = currentFilename;
         currentFilename = null;
         uploadedImageData = null;
+        currentImageData = null;
 
         // Cleanup server files if needed
         if (oldFilename) {

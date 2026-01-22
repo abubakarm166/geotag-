@@ -1,0 +1,53 @@
+[build]
+  # Directory to publish (static files)
+  publish = "public"
+  # Directory with Netlify Functions
+  functions = "netlify/functions"
+  # Build command
+  command = "echo 'Netlify build complete'"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+# Redirect all routes to index.html for SPA
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# API routes - proxy to Netlify Functions
+[[redirects]]
+  from = "/api/upload"
+  to = "/.netlify/functions/upload"
+  status = 200
+
+[[redirects]]
+  from = "/api/geotag"
+  to = "/.netlify/functions/geotag"
+  status = 200
+
+[[redirects]]
+  from = "/api/download/*"
+  to = "/.netlify/functions/download"
+  status = 200
+
+[[redirects]]
+  from = "/api/cleanup/*"
+  to = "/.netlify/functions/cleanup"
+  status = 200
+
+# Headers for CORS
+[[headers]]
+  for = "/.netlify/functions/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Headers = "Content-Type, Authorization"
+    Access-Control-Allow-Methods = "GET, POST, DELETE, OPTIONS"
+
+# Headers for static files
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
