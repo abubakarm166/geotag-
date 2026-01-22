@@ -94,6 +94,7 @@ exports.handler = async (event, context) => {
     const boundary = contentType.split('boundary=')[1];
     
     if (!boundary) {
+      console.log('No boundary found. Content-Type:', contentType);
       return {
         statusCode: 400,
         headers: {
@@ -104,8 +105,14 @@ exports.handler = async (event, context) => {
       };
     }
     
+    // Netlify Functions receive body as base64 if isBase64Encoded is true
+    let bodyData = event.body;
+    if (event.isBase64Encoded) {
+      bodyData = Buffer.from(event.body, 'base64').toString('binary');
+    }
+    
     // Parse multipart form data
-    const formData = parseMultipartFormData(event.body, boundary);
+    const formData = parseMultipartFormData(bodyData, boundary);
     const imageFile = formData.image;
     
     if (!imageFile) {

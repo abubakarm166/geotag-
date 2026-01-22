@@ -231,6 +231,12 @@ async function handleFile(file) {
         }
     };
     reader.readAsDataURL(file);
+    
+    // Check file size (Netlify has 6MB limit)
+    if (file.size > 6 * 1024 * 1024) {
+        showStatus('File is too large. Netlify Functions have a 6MB limit. Please use a smaller image.', 'error');
+        return;
+    }
 
     // Upload to server
     const formData = new FormData();
@@ -243,7 +249,15 @@ async function handleFile(file) {
             body: formData
         });
 
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Upload failed:', response.status, errorText);
+            showStatus('Upload failed: ' + response.status + ' - ' + errorText, 'error');
+            return;
+        }
+
         const data = await response.json();
+        console.log('Upload response:', data);
 
         if (data.success) {
             currentFilename = data.filename;
@@ -253,14 +267,24 @@ async function handleFile(file) {
             
             // Show tool section
             const toolSection = document.getElementById('toolSection');
+            console.log('Tool section element:', toolSection);
             if (toolSection) {
                 toolSection.classList.remove('hidden');
+                console.log('Tool section shown');
                 // Initialize map if not already initialized
                 if (!map) {
-                    setTimeout(() => initMap(), 100);
+                    setTimeout(() => {
+                        initMap();
+                        console.log('Map initialized');
+                    }, 100);
                 }
                 // Scroll to tool section
-                toolSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                setTimeout(() => {
+                    toolSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 200);
+            } else {
+                console.error('Tool section not found in DOM');
+                showStatus('Error: Tool section not found', 'error');
             }
             
             // Show existing geotags if any
