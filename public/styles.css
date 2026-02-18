@@ -243,6 +243,117 @@ body {
     margin-bottom: 16px;
 }
 
+.location-search-row {
+    margin-bottom: 16px;
+}
+
+.search-box-wrap {
+    position: relative;
+    width: 100%;
+}
+
+.search-box-wrap label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+    color: var(--text-dark);
+    font-size: 0.875rem;
+}
+
+.search-input-group {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+}
+
+.search-input-group input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 2px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+.search-input-group input:focus {
+    outline: none;
+    border-color: var(--primary-blue);
+}
+
+.btn-search {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: var(--primary-blue);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-search:hover {
+    background: var(--primary-blue-dark);
+}
+
+.search-icon {
+    width: 18px;
+    height: 18px;
+    stroke-width: 2;
+}
+
+.search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 4px;
+    background: white;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: var(--shadow-lg);
+    max-height: 280px;
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+.search-results.hidden {
+    display: none;
+}
+
+.search-result-item {
+    padding: 12px 14px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.95rem;
+    color: var(--text-dark);
+    transition: background 0.2s;
+}
+
+.search-result-item:last-child {
+    border-bottom: none;
+}
+
+.search-result-item:hover {
+    background: var(--bg-light);
+}
+
+.search-result-item .result-type {
+    font-size: 0.8rem;
+    color: var(--text-gray);
+    margin-top: 2px;
+}
+
+.search-results-loading,
+.search-results-empty {
+    padding: 16px;
+    color: var(--text-gray);
+    font-size: 0.95rem;
+    text-align: center;
+}
+
 .coordinates-input {
     display: flex;
     gap: 12px;
@@ -449,6 +560,39 @@ body {
 
 .btn-secondary:hover:not(:disabled) {
     background: #4b5563;
+}
+
+/* Set Location button - standout style */
+.btn-set-location {
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-dark) 100%);
+    color: white;
+    padding: 12px 24px;
+    font-size: 1rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.39);
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.btn-set-location:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px 0 rgba(37, 99, 235, 0.5);
+}
+
+.btn-set-location:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.btn-pin-icon {
+    width: 20px;
+    height: 20px;
+    stroke-width: 2.5;
+    flex-shrink: 0;
 }
 
 .status-message {

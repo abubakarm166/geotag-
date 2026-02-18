@@ -59,6 +59,70 @@ function setLocation(lat, lon) {
     // Enable write button
     const writeBtn = document.getElementById('writeExifBtn');
     if (writeBtn) writeBtn.disabled = false;
+
+    // Close search results if open
+    const resultsEl = document.getElementById('searchResults');
+    if (resultsEl) {
+        resultsEl.classList.add('hidden');
+        resultsEl.innerHTML = '';
+    }
+}
+
+// Search location using OpenStreetMap Nominatim (free, no API key)
+async function searchLocation() {
+    const input = document.getElementById('locationSearch');
+    const resultsEl = document.getElementById('searchResults');
+    if (!input || !resultsEl) return;
+
+    const query = input.value.trim();
+    if (!query) {
+        showStatus('Enter an address or place name to search', 'error');
+        return;
+    }
+
+    resultsEl.classList.remove('hidden');
+    resultsEl.innerHTML = '<div class="search-results-loading">Searching…</div>';
+
+    try {
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=8`;
+        const response = await fetch(url, {
+            headers: {
+                'Accept': 'application/json',
+                'Accept-Language': 'en'
+            }
+        });
+        const data = await response.json();
+
+        if (!data || data.length === 0) {
+            resultsEl.innerHTML = '<div class="search-results-empty">No results found. Try a different search.</div>';
+            return;
+        }
+
+        resultsEl.innerHTML = data.map(function(item) {
+            const displayName = item.display_name || '';
+            const type = (item.type || item.class || '').replace(/_/g, ' ');
+            return '<div class="search-result-item" data-lat="' + item.lat + '" data-lon="' + item.lon + '" data-name="' + displayName.replace(/"/g, '&quot;') + '">' +
+                '<strong>' + displayName + '</strong>' +
+                (type ? '<div class="result-type">' + type + '</div>' : '') +
+                '</div>';
+        }).join('');
+
+        resultsEl.querySelectorAll('.search-result-item').forEach(function(el) {
+            el.addEventListener('click', function() {
+                const lat = parseFloat(this.getAttribute('data-lat'));
+                const lon = parseFloat(this.getAttribute('data-lon'));
+                if (!isNaN(lat) && !isNaN(lon)) {
+                    setLocation(lat, lon);
+                    resultsEl.classList.add('hidden');
+                    resultsEl.innerHTML = '';
+                    input.value = this.getAttribute('data-name') || input.value;
+                }
+            });
+        });
+    } catch (err) {
+        console.error('Search error:', err);
+        resultsEl.innerHTML = '<div class="search-results-empty">Search failed. Please try again.</div>';
+    }
 }
 
 // Initialize on page load
@@ -76,7 +140,36 @@ function setupEventListeners() {
     const downloadBtn = document.getElementById('downloadBtn');
     const clearBtn = document.getElementById('clearBtn');
     const setFromCoordsBtn = document.getElementById('setFromCoords');
+    const searchLocationBtn = document.getElementById('searchLocationBtn');
+    const locationSearchInput = document.getElementById('locationSearch');
     const tabButtons = document.querySelectorAll('.tab-btn');
+
+    // Location search
+    if (searchLocationBtn) {
+        searchLocationBtn.addEventListener('click', searchLocation);
+    }
+    if (locationSearchInput) {
+        locationSearchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                searchLocation();
+            }
+        });
+        locationSearchInput.addEventListener('focus', function() {
+            const resultsEl = document.getElementById('searchResults');
+            if (resultsEl && resultsEl.innerHTML && !resultsEl.classList.contains('hidden')) {
+                resultsEl.classList.remove('hidden');
+            }
+        });
+    }
+    // Close search results when clicking outside
+    document.addEventListener('click', function(e) {
+        const wrap = document.querySelector('.search-box-wrap');
+        const resultsEl = document.getElementById('searchResults');
+        if (resultsEl && wrap && !wrap.contains(e.target)) {
+            resultsEl.classList.add('hidden');
+        }
+    });
 
     // File upload
     if (uploadArea) {
